@@ -4,7 +4,6 @@
 
 WNSForms is a simple, elegant solution for handling form submissions without relying on third-party services. Built on Laravel, it provides a clean admin interface to manage forms, submissions, and integrations.
 
-![WNSForms](https://img.shields.io/badge/WNSForms-Who%20Needs%20SaaS%20Forms-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## ✨ Features
@@ -147,52 +146,6 @@ php artisan make:filament-user
    ```bash
    apt-get install -y certbot python3-certbot-nginx
    certbot --nginx -d your-domain.com
-   ```
-
-5. **Configure Supervisor for Queue Worker**
-
-   ```bash
-   apt-get install -y supervisor
-   
-   # Create configuration file
-   nano /etc/supervisor/conf.d/wnsforms.conf
-   ```
-
-   Add the following content:
-
-   ```
-   [program:wnsforms-worker]
-   process_name=%(program_name)s_%(process_num)02d
-   command=php /var/www/wnsforms/artisan queue:work --sleep=3 --tries=3 --max-time=3600
-   autostart=true
-   autorestart=true
-   stopasgroup=true
-   killasgroup=true
-   user=www-data
-   numprocs=1
-   redirect_stderr=true
-   stdout_logfile=/var/www/wnsforms/storage/logs/worker.log
-   stopwaitsecs=3600
-   ```
-
-   Start the supervisor:
-
-   ```bash
-   supervisorctl reread
-   supervisorctl update
-   supervisorctl start wnsforms-worker:*
-   ```
-
-6. **Set up Cron for Scheduled Tasks**
-
-   ```bash
-   crontab -e
-   ```
-
-   Add the following line:
-
-   ```
-   * * * * * cd /var/www/wnsforms && php artisan schedule:run >> /dev/null 2>&1
    ```
 
 ## 📝 Usage
