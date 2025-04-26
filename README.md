@@ -1,8 +1,6 @@
-# WNSForms
+# WNSForms - Who Needs SaaS Forms
 
-> A self-hosted form handling solution that doesn't require expensive SaaS subscriptions.
-
-WNSForms is a simple, elegant solution for handling form submissions without relying on third-party services. Built on Laravel, it provides a clean admin interface to manage forms, submissions, and integrations.
+WNSForms is a simple, self-hosted solution for handling form submissions from static websites without relying on third-party services. Built on Laravel, it provides a clean admin interface to manage forms, submissions, and Slack integrations.
 
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -19,7 +17,7 @@ WNSForms is a simple, elegant solution for handling form submissions without rel
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/wnsforms.git
+git clone https://github.com/Putr/wnsforms.git
 cd wnsforms
 
 # Install dependencies
