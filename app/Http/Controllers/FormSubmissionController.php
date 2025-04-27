@@ -17,8 +17,7 @@ class FormSubmissionController extends Controller
     public function submit(Request $request, string $hash)
     {
         // Check if this is a JSON request
-        $wantsJson = $request->expectsJson() || $request->ajax() || $request->is('api/*') ||
-            $request->header('Accept') === 'application/json';
+        $wantsJson = $request->header('Accept') === 'application/json';
 
         // Check honeypot fields - if these are filled, it's likely a bot
         if ($request->filled('website') || $request->filled('phone_2')) {
