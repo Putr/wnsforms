@@ -32,6 +32,13 @@ php artisan migrate
 
 # Create a user
 php artisan make:filament-user
+
+# Install the frontend dependencies
+npm i
+
+# Build the frontend (run npm run dev to start the development server)
+npm run build
+
 ```
 
 ## 💻 Development
@@ -102,48 +109,6 @@ php artisan make:filament-user
    php artisan config:cache
    php artisan route:cache
    php artisan view:cache
-   ```
-
-3. **Configure Nginx**
-
-   ```nginx
-   server {
-       listen 80;
-       server_name your-domain.com;
-       root /var/www/wnsforms/public;
-   
-       add_header X-Frame-Options "SAMEORIGIN";
-       add_header X-Content-Type-Options "nosniff";
-   
-       index index.php;
-       charset utf-8;
-   
-       location / {
-           try_files $uri $uri/ /index.php?$query_string;
-       }
-   
-       location = /favicon.ico { access_log off; log_not_found off; }
-       location = /robots.txt  { access_log off; log_not_found off; }
-   
-       error_page 404 /index.php;
-   
-       location ~ \.php$ {
-           fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
-           fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-           include fastcgi_params;
-       }
-   
-       location ~ /\.(?!well-known).* {
-           deny all;
-       }
-   }
-   ```
-
-4. **Set up SSL with Let's Encrypt**
-
-   ```bash
-   apt-get install -y certbot python3-certbot-nginx
-   certbot --nginx -d your-domain.com
    ```
 
 ## 📝 Usage
