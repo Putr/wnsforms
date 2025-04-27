@@ -39,6 +39,12 @@ npm i
 # Build the frontend (run npm run dev to start the development server)
 npm run build
 
+# Set permissions
+chmod -R 775 storage bootstrap/cache
+
+# Publish Livewire assets
+php artisan livewire:publish
+
 ```
 
 ## 💻 Development
