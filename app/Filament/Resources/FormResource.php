@@ -27,40 +27,81 @@ class FormResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('hash')
-                    ->maxLength(255)
-                    ->helperText('Leave empty to auto-generate')
-                    ->placeholder('Auto-generated if left empty'),
-                Forms\Components\TextInput::make('allowed_domains')
-                    ->helperText('Enter domains separated by commas (e.g., example.com,test.com)')
-                    ->placeholder('Leave empty to allow all domains'),
-                Forms\Components\TextInput::make('notification_email')
-                    ->email()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('success_redirect')
-                    ->label('Success Redirect URL')
-                    ->url()
-                    ->helperText('Where to redirect after successful form submission (optional)')
-                    ->placeholder('https://example.com/thank-you')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('error_redirect')
-                    ->label('Error Redirect URL')
-                    ->url()
-                    ->helperText('Where to redirect if there is an error (optional)')
-                    ->placeholder('https://example.com/error')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('slack_webhook_url')
-                    ->label('Slack Webhook URL')
-                    ->url()
-                    ->helperText('Slack webhook URL to send form submissions to (optional)')
-                    ->placeholder('https://hooks.slack.com/services/XXX/YYY/ZZZ')
-                    ->maxLength(255),
-                Forms\Components\Toggle::make('is_active')
-                    ->default(true)
-                    ->required(),
+                Forms\Components\Tabs::make('Form Details')
+                    ->tabs([
+                        Forms\Components\Tabs\Tab::make('General')
+                            ->schema([
+                                Forms\Components\TextInput::make('name')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('hash')
+                                    ->maxLength(255)
+                                    ->helperText('Leave empty to auto-generate')
+                                    ->placeholder('Auto-generated if left empty'),
+                                Forms\Components\TextInput::make('allowed_domains')
+                                    ->helperText('Enter domains separated by commas (e.g., example.com,test.com)')
+                                    ->placeholder('Leave empty to allow all domains'),
+                                Forms\Components\TextInput::make('notification_email')
+                                    ->email()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('success_redirect')
+                                    ->label('Success Redirect URL')
+                                    ->url()
+                                    ->helperText('Where to redirect after successful form submission (optional)')
+                                    ->placeholder('https://example.com/thank-you')
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('error_redirect')
+                                    ->label('Error Redirect URL')
+                                    ->url()
+                                    ->helperText('Where to redirect if there is an error (optional)')
+                                    ->placeholder('https://example.com/error')
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('slack_webhook_url')
+                                    ->label('Slack Webhook URL')
+                                    ->url()
+                                    ->helperText('Slack webhook URL to send form submissions to (optional)')
+                                    ->placeholder('https://hooks.slack.com/services/XXX/YYY/ZZZ')
+                                    ->maxLength(255),
+                                Forms\Components\Toggle::make('is_active')
+                                    ->default(true)
+                                    ->required(),
+                            ]),
+                        Forms\Components\Tabs\Tab::make('Fields')
+                            ->schema([
+                                Forms\Components\Section::make('Form Fields')
+                                    ->description('Configure the fields that will appear in your form. If no fields are added, the form will accept any input (except for rate limiting).')
+                                    ->schema([
+                                        Forms\Components\Repeater::make('fields')
+                                            ->relationship()
+                                            ->schema([
+                                                Forms\Components\TextInput::make('name')
+                                                    ->required()
+                                                    ->maxLength(255)
+                                                    ->helperText('The field name used in the POST request (e.g., "email", "message")'),
+                                                Forms\Components\Select::make('type')
+                                                    ->options([
+                                                        'text' => 'Text',
+                                                        'email' => 'Email',
+                                                        'phone' => 'Phone',
+                                                        'url' => 'URL',
+                                                        'honeypot' => 'Honeypot',
+                                                    ])
+                                                    ->required()
+                                                    ->helperText('The type of input field for validation'),
+                                                Forms\Components\Toggle::make('required')
+                                                    ->default(false)
+                                                    ->helperText('If enabled, the field must exist and not be null in the submission. If disabled, the field can either be missing or null.'),
+                                            ])
+                                            ->columns(2)
+                                            ->defaultItems(0)
+                                            ->collapsible()
+                                            ->itemLabel(fn(array $state): ?string => $state['name'] ?? null)
+                                            ->reorderable()
+                                            ->addActionLabel('Add Field'),
+                                    ]),
+                            ]),
+                    ])
+                    ->columnSpanFull(),
             ]);
     }
 

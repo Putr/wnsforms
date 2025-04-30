@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Cache\RateLimiting\Limit;
 
 class FormSubmissionController extends Controller
 {
@@ -19,11 +18,16 @@ class FormSubmissionController extends Controller
         // Check if this is a JSON request
         $wantsJson = $request->header('Accept') === 'application/json';
 
-        // Check honeypot fields - if these are filled, it's likely a bot
-        if ($request->filled('website') || $request->filled('phone_2')) {
-            // Silently accept the submission but don't process it
-            // This way bots won't know they've been detected
-            return response()->json(['message' => 'Form submission received']);
+        // Find the form by hash
+        $form = Form::where('hash', $hash)->where('is_active', true)->first();
+
+        if (!$form) {
+            return response()->json(['message' => 'Form not found'], 404);
+        }
+
+        // Handle validation failures
+        if ($this->validateSubmission($request, $form) === false) {
+            return $this->sendSuccessResponse($wantsJson, $form);
         }
 
         // Rate limiting - 10 submissions per IP per hour
@@ -33,10 +37,7 @@ class FormSubmissionController extends Controller
         if (RateLimiter::tooManyAttempts($rateLimiterKey, 10)) {
             $seconds = RateLimiter::availableIn($rateLimiterKey);
 
-            // Find the form to check if there's an error redirect
-            $form = Form::where('hash', $hash)->where('is_active', true)->first();
-
-            if ($form && $form->error_redirect && !$wantsJson) {
+            if ($form->error_redirect && !$wantsJson) {
                 return redirect($form->error_redirect)
                     ->with('error', 'Too many submissions. Please try again later.');
             }
@@ -49,13 +50,6 @@ class FormSubmissionController extends Controller
 
         // Hit the rate limiter
         RateLimiter::hit($rateLimiterKey, 3600); // 1 hour expiry
-
-        // Find the form by hash
-        $form = Form::where('hash', $hash)->where('is_active', true)->first();
-
-        if (!$form) {
-            return response()->json(['message' => 'Form not found'], 404);
-        }
 
         // Check if the domain is allowed
         $referrer = $request->header('referer');
@@ -77,8 +71,11 @@ class FormSubmissionController extends Controller
             return response()->json(['message' => 'Domain not allowed'], 403);
         }
 
-        // Remove honeypot fields from the data
-        $data = $request->except(['_token', 'website', 'phone_2']);
+        // Get all configured field names
+        $configuredFields = $form->fields->pluck('name')->toArray();
+
+        // Remove only honeypot fields and keep only configured fields
+        $data = $request->only($configuredFields);
 
         // Create a new submission
         $submission = new FormSubmission([
@@ -111,15 +108,30 @@ class FormSubmissionController extends Controller
             $this->sendEmailNotification($form, $data, $submission);
         }
 
-        // Check if we should redirect
-        if ($wantsJson) {
-            return response()->json(['message' => 'Form submission received']);
-        } elseif ($form->success_redirect) {
-            return redirect($form->success_redirect)
-                ->with('success', 'Form submitted successfully!');
-        } else {
-            return response()->json(['message' => 'Form submission received']);
+        return $this->sendSuccessResponse($wantsJson, $form);
+    }
+
+    /**
+     * Validate a form submission against the form's validation rules
+     */
+    private function validateSubmission(Request $request, Form $form): bool|string
+    {
+        // Get validation rules from form configuration
+        $rules = $form->getValidationRules();
+
+        // If no fields are configured, only check rate limiting
+        if (empty($rules)) {
+            return true;
         }
+
+        // Validate the request
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -246,6 +258,21 @@ class FormSubmissionController extends Controller
                 'form_id' => $form->id,
                 'error' => $e->getMessage()
             ]);
+        }
+    }
+
+    /**
+     * Send success response based on request type and form configuration
+     */
+    private function sendSuccessResponse(bool $wantsJson, Form $form)
+    {
+        if ($wantsJson) {
+            return response()->json(['message' => 'Form submission received']);
+        } elseif ($form->success_redirect) {
+            return redirect($form->success_redirect)
+                ->with('success', 'Form submitted successfully!');
+        } else {
+            return response()->json(['message' => 'Form submission received']);
         }
     }
 }

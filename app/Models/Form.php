@@ -50,4 +50,20 @@ class Form extends Model
 
         return in_array($domain, $this->allowed_domains);
     }
+
+    public function fields()
+    {
+        return $this->hasMany(FormField::class)->orderBy('order');
+    }
+
+    public function getValidationRules(): array
+    {
+        $rules = [];
+
+        foreach ($this->fields as $field) {
+            $rules[$field->name] = $field->getValidationRules();
+        }
+
+        return $rules;
+    }
 }
