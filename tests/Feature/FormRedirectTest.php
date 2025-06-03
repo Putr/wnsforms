@@ -23,7 +23,7 @@ afterEach(function () {
 test('redirects to success URL after successful submission', function () {
     // Make a regular POST request (not JSON) to the web route
     $response = $this->withoutMiddleware()
-        ->post("/post/{$this->form->hash}", [
+        ->post("/api/post/{$this->form->hash}", [
             'name' => 'John Doe',
             'email' => 'john@example.com',
             'message' => 'This is a test message',
@@ -38,7 +38,7 @@ test('redirects to error URL when domain is not allowed', function () {
     $response = $this->withoutMiddleware()
         ->withHeaders([
             'referer' => 'https://not-allowed.com/contact',
-        ])->post("/post/{$this->form->hash}", [
+        ])->post("/api/post/{$this->form->hash}", [
             'name' => 'John Doe',
             'email' => 'john@example.com',
         ]);
@@ -58,7 +58,7 @@ test('redirects to error URL when rate limited', function () {
         ->andReturn(60);
 
     $response = $this->withoutMiddleware()
-        ->post("/post/{$this->form->hash}", [
+        ->post("/api/post/{$this->form->hash}", [
             'name' => 'John Doe',
             'email' => 'john@example.com',
         ]);
@@ -69,7 +69,7 @@ test('redirects to error URL when rate limited', function () {
 
 test('does not redirect for JSON requests', function () {
     $response = $this->withoutMiddleware()
-        ->postJson("/post/{$this->form->hash}", [
+        ->postJson("/api/post/{$this->form->hash}", [
             'name' => 'John Doe',
             'email' => 'john@example.com',
             'message' => 'This is a test message',
@@ -85,7 +85,7 @@ test('falls back to JSON response when no success redirect is set', function () 
     $this->form->update(['success_redirect' => null]);
 
     $response = $this->withoutMiddleware()
-        ->post("/post/{$this->form->hash}", [
+        ->post("/api/post/{$this->form->hash}", [
             'name' => 'John Doe',
             'email' => 'john@example.com',
             'message' => 'This is a test message',

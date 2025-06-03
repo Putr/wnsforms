@@ -36,6 +36,7 @@ class FormField extends Model
         switch ($this->type) {
             case 'email':
                 $rules[] = 'email';
+                $rules[] = 'disposable_email';
                 break;
             case 'phone':
                 $rules[] = 'min:5|max:20';

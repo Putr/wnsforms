@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Form;
 use App\Models\FormSubmission;
+use App\Services\SpamDetection\SpamDetector;
+use App\Services\SpamDetection\KeywordSpamCheck;
+use App\Services\SpamDetection\UrlCountSpamCheck;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -13,10 +16,22 @@ use Illuminate\Support\Facades\RateLimiter;
 
 class FormSubmissionController extends Controller
 {
+    private SpamDetector $spamDetector;
+
+    public function __construct()
+    {
+        $this->spamDetector = new SpamDetector();
+
+        // Register our spam checks
+        $this->spamDetector
+            ->addCheck(new KeywordSpamCheck())
+            ->addCheck(new UrlCountSpamCheck());
+    }
+
     public function submit(Request $request, string $hash)
     {
         // Check if this is a JSON request
-        $wantsJson = $request->header('Accept') === 'application/json';
+        $wantsJson = $request->expectsJson();
 
         // Find the form by hash
         $form = Form::where('hash', $hash)->where('is_active', true)->first();
@@ -25,8 +40,42 @@ class FormSubmissionController extends Controller
             return response()->json(['message' => 'Form not found'], 404);
         }
 
+        // Check if the domain is allowed
+        $referrer = $request->header('referer');
+        $referrerDomain = null;
+
+        if ($referrer) {
+            $parsedUrl = parse_url($referrer);
+            if (isset($parsedUrl['host'])) {
+                $referrerDomain = $parsedUrl['host'];
+            }
+        }
+
+        if ($referrerDomain && !$form->isAllowedDomain($referrerDomain)) {
+            if ($form->error_redirect && !$wantsJson) {
+                return redirect($form->error_redirect)
+                    ->with('error', 'Domain not allowed');
+            }
+
+            return response()->json(['message' => 'Domain not allowed'], 403);
+        }
+
         // Handle validation failures
         if ($this->validateSubmission($request, $form) === false) {
+            return $this->sendSuccessResponse($wantsJson, $form);
+        }
+
+        // Check for spam
+        $spamMessage = $this->spamDetector->detect($request->all());
+
+        if ($spamMessage) {
+            // Log the spam attempt
+            Log::info('Spam detected', [
+                'form_id' => $form->id,
+                'message' => $spamMessage,
+                'data' => $request->all()
+            ]);
+
             return $this->sendSuccessResponse($wantsJson, $form);
         }
 
@@ -50,26 +99,6 @@ class FormSubmissionController extends Controller
 
         // Hit the rate limiter
         RateLimiter::hit($rateLimiterKey, 3600); // 1 hour expiry
-
-        // Check if the domain is allowed
-        $referrer = $request->header('referer');
-        $referrerDomain = null;
-
-        if ($referrer) {
-            $parsedUrl = parse_url($referrer);
-            if (isset($parsedUrl['host'])) {
-                $referrerDomain = $parsedUrl['host'];
-            }
-        }
-
-        if ($referrerDomain && !$form->isAllowedDomain($referrerDomain)) {
-            if ($form->error_redirect && !$wantsJson) {
-                return redirect($form->error_redirect)
-                    ->with('error', 'Domain not allowed');
-            }
-
-            return response()->json(['message' => 'Domain not allowed'], 403);
-        }
 
         // Get all configured field names
         $configuredFields = $form->fields->pluck('name')->toArray();
@@ -128,6 +157,8 @@ class FormSubmissionController extends Controller
         $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
+            // If validation fails, return false to indicate failure
+            // This will trigger a success response to not alert bots
             return false;
         }
 
