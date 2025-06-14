@@ -7,6 +7,7 @@ use App\Models\FormSubmission;
 use App\Services\SpamDetection\SpamDetector;
 use App\Services\SpamDetection\KeywordSpamCheck;
 use App\Services\SpamDetection\UrlCountSpamCheck;
+use App\Services\SpamDetection\HtmlSpamCheck;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -25,7 +26,8 @@ class FormSubmissionController extends Controller
         // Register our spam checks
         $this->spamDetector
             ->addCheck(new KeywordSpamCheck())
-            ->addCheck(new UrlCountSpamCheck());
+            ->addCheck(new UrlCountSpamCheck())
+            ->addCheck(new HtmlSpamCheck());
     }
 
     public function submit(Request $request, string $hash)
