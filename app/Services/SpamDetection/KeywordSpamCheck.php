@@ -59,7 +59,18 @@ class KeywordSpamCheck extends AbstractSpamCheck
         'Instagram',
         'TikTok',
         'YouTube',
-        'escort'
+        'escort',
+        'prize',
+        'google ads',
+        'cash',
+        'withdrawal',
+        'script.google.com',
+        'vk.com',
+        'yandex',
+        'loli*ta',
+        'fu*ck',
+        'lose it',
+        'macros'
     ];
 
     public function check(array $data): bool

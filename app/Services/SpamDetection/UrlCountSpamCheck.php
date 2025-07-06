@@ -4,7 +4,7 @@ namespace App\Services\SpamDetection;
 
 class UrlCountSpamCheck extends AbstractSpamCheck
 {
-    private int $maxUrls = 2;
+    private int $maxUrls = 1;
 
     public function check(array $data): bool
     {

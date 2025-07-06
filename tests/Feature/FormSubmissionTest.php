@@ -225,3 +225,41 @@ test('disposable email addresses get flagged as spam', function () {
     // But no submission should be saved
     $this->assertDatabaseCount('form_submissions', 0);
 });
+
+test('submission is blocked for blacklisted email domain', function () {
+    $formData = [
+        'name' => 'John Doe',
+        'email' => 'user@anonmails.de',
+        'message' => 'Test message',
+    ];
+    $response = $this->withoutMiddleware()
+        ->postJson("/api/post/{$this->form->hash}", $formData);
+    $response->assertStatus(200);
+    $this->assertDatabaseCount('form_submissions', 0);
+});
+
+test('submission is blocked for blacklisted exact email', function () {
+    $formData = [
+        'name' => 'John Doe',
+        'email' => 'yawiviseya67@gmail.com',
+        'message' => 'Test message',
+    ];
+    $response = $this->withoutMiddleware()
+        ->postJson("/api/post/{$this->form->hash}", $formData);
+    $response->assertStatus(200);
+    $this->assertDatabaseCount('form_submissions', 0);
+});
+
+test('submission is allowed for non-blacklisted email/domain', function () {
+    $formData = [
+        'name' => 'John Doe',
+        'email' => 'user@gmail.com',
+        'message' => 'Test message',
+    ];
+    $response = $this->withoutMiddleware()
+        ->postJson("/api/post/{$this->form->hash}", $formData);
+    $response->assertStatus(200);
+    $this->assertDatabaseHas('form_submissions', [
+        'form_id' => $this->form->id,
+    ]);
+});

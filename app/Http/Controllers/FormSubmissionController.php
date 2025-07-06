@@ -8,6 +8,8 @@ use App\Services\SpamDetection\SpamDetector;
 use App\Services\SpamDetection\KeywordSpamCheck;
 use App\Services\SpamDetection\UrlCountSpamCheck;
 use App\Services\SpamDetection\HtmlSpamCheck;
+use App\Services\SpamDetection\EmailDomainBlacklistSpamCheck;
+use App\Services\SpamDetection\ExactEmailBlacklistSpamCheck;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -27,7 +29,9 @@ class FormSubmissionController extends Controller
         $this->spamDetector
             ->addCheck(new KeywordSpamCheck())
             ->addCheck(new UrlCountSpamCheck())
-            ->addCheck(new HtmlSpamCheck());
+            ->addCheck(new HtmlSpamCheck())
+            ->addCheck(new EmailDomainBlacklistSpamCheck())
+            ->addCheck(new ExactEmailBlacklistSpamCheck());
     }
 
     public function submit(Request $request, string $hash)
